@@ -19,27 +19,6 @@ const TEMPERATURE = 0.2;
 const MAX_TOKENS = 6000;
 const ANTHROPIC_VERSION = 'bedrock-2023-05-31';
 
-/**
- * Fail-fast check for required AWS environment variables.
- * Throws a clear error at first call if any are missing.
- */
-function validateEnvVars(): void {
-  const required = [
-    'AWS_ACCESS_KEY_ID',
-    'AWS_SECRET_ACCESS_KEY',
-    'AWS_REGION',
-    'BEDROCK_MODEL_ID',
-  ];
-  const missing = required.filter(
-    (key) => !process.env[key] || process.env[key]!.trim() === ''
-  );
-  if (missing.length > 0) {
-    throw new Error(
-      `Missing required AWS environment variables: ${missing.join(', ')}. Check Amplify Console environment configuration.`
-    );
-  }
-}
-
 interface BedrockSuccess {
   success: true;
   data: unknown;
@@ -52,17 +31,17 @@ interface BedrockError {
 
 type BedrockResult = BedrockSuccess | BedrockError;
 
-/**
- * Creates a Bedrock runtime client using server-side environment variables.
- * Credentials are never exposed to the client.
- */
+// Credential resolution uses the AWS SDK default credential provider chain.
+// Production (Amplify Hosting): STS-assumed credentials from the compute
+//   role attached at App settings > IAM roles > Compute role. Lambda
+//   runtime auto-injects AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and
+//   AWS_SESSION_TOKEN.
+// Local dev (npm run dev): .env.local values for AWS_ACCESS_KEY_ID and
+//   AWS_SECRET_ACCESS_KEY (the SDK reads them via process.env).
+// No explicit credentials block needed. The SDK handles both paths.
 function createClient(): BedrockRuntimeClient {
   return new BedrockRuntimeClient({
     region: process.env.AWS_REGION || 'us-east-1',
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    },
   });
 }
 
@@ -79,18 +58,6 @@ export async function callBedrock(
   userMessage: string
 ): Promise<BedrockResult> {
   const modelId = process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-sonnet-4-6';
-
-  // Fail-fast if credentials are missing
-  try {
-    validateEnvVars();
-  } catch (error) {
-    console.error(error);
-    return {
-      success: false,
-      message:
-        "We weren't able to complete your assessment. Please try again. If the issue continues, contact your supervisor.",
-    };
-  }
 
   const requestBody = {
     anthropic_version: ANTHROPIC_VERSION,
