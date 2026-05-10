@@ -25,7 +25,7 @@ npm run dev
 
 ## Heads up: AWS Amplify Hosting + Bedrock gotchas
 
-If you're forking this project to deploy your own version, there are three AWS gotchas that cost us about three hours of debugging. AWS docs underspecify all of them. Hopefully this saves you the same time.
+If you're forking this project to deploy your own version, there are four AWS gotchas that cost us more than half a day of debugging. AWS docs underspecify all of them. Hopefully this saves you the same time.
 
 ### Gotcha 1: The trust policy needs two principals, not one
 
@@ -104,9 +104,27 @@ This change touches three places:
 
 **Symptom if you miss this:** API routes hang for exactly 28 seconds, get killed with "Request timed out." Unlike Gotchas 1 and 2, you will see partial logs in CloudWatch showing the Bedrock call started successfully (credential resolution worked, the SDK call went through). The Lambda dies mid-response, not before the SDK reaches Bedrock.
 
+### Gotcha 4: Next.js Pages API routes don't truly stream on Amplify Hosting
+
+After implementing the streaming fix from Gotcha 3, you may find your API routes still time out at the gateway. The Lambda is receiving Bedrock chunks correctly via async iteration, your code is calling `res.write(chunk)` for each one, but the gateway still kills the connection.
+
+The reason: Next.js Pages API routes buffer the response. The chunks you write via `res.write()` are not flushed to the Amplify gateway in real-time. They sit in Next.js's internal HTTP handling until `res.end()` is called, at which point the full response is serialized and sent at once. By that time, the gateway has already cut the connection.
+
+App Router route handlers using the standard Web `Response` object with a `ReadableStream` body have better streaming behavior, but the gateway timeout still caps total time. Streaming alone does not defeat the timeout on Amplify SSR if the full response exceeds it.
+
+**Symptom if you miss this:** API routes hang for 28-30 seconds even after switching to streaming SDK calls. CloudWatch logs may show Bedrock chunks being received inside the Lambda, but the client only sees the platform timeout. Switching from `InvokeModel` to `InvokeModelWithResponseStream` does not fix the timeout — it just changes where in the call stack the timeout hits.
+
+**The honest fix paths:**
+
+Reduce response time below the gateway window. For LLMs, this means dropping `max_tokens`, simplifying prompts, asking for fewer items in structured outputs. We landed on `max_tokens=3000` for Themis Lex, which kept Bedrock generation reliably under 25 seconds.
+
+If response time can't be reduced, move the slow endpoint off Amplify SSR. Real options: Lambda Function URL with response streaming enabled (15-minute timeout, true server-sent streaming), separate Lambda behind API Gateway (60-second timeout), or migrate hosting to Vercel Pro (60s timeout, first-class Next.js streaming support).
+
+For LLM-heavy workloads with synchronous structured output, Vercel Pro is generally a better hosting fit than Amplify SSR. Amplify wins for fast API routes, content sites, and standard CRUD apps. It's the wrong default for any workload where a single response routinely exceeds 25 seconds.
+
 ### Why none of these gotchas appear clearly in the obvious places
 
-All three are filed as open issues on aws-amplify/amplify-hosting. The official docs cover the build pathway clearly but treat the runtime pathway as an implementation detail. You are not the first dev to hit any of them. Just the cost of doing business on Amplify Hosting in Spring 2026.
+All four are filed as open issues on aws-amplify/amplify-hosting. The official docs cover the build pathway clearly but treat the runtime pathway as an implementation detail. You are not the first dev to hit any of them. Just the cost of doing business on Amplify Hosting in Spring 2026.
 
 ---
 

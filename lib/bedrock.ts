@@ -25,7 +25,7 @@ import {
 // Do not build until v1 is shipped and credit budget allows.
 
 const TEMPERATURE = 0.2;
-const MAX_TOKENS = 2000;
+const MAX_TOKENS = 4000;
 const ANTHROPIC_VERSION = 'bedrock-2023-05-31';
 
 interface BedrockSuccess {
@@ -67,7 +67,7 @@ export async function callBedrock(
   systemPrompt: string,
   userMessage: string
 ): Promise<BedrockResult> {
-  const modelId = process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-sonnet-4-6';
+  const modelId = process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-haiku-4-5-20251001-v1:0';
 
   const requestBody = {
     anthropic_version: ANTHROPIC_VERSION,
