@@ -59,6 +59,12 @@ export async function callBedrock(
 ): Promise<BedrockResult> {
   const modelId = process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-sonnet-4-6';
 
+  // DIAGNOSTIC — remove after confirming credential injection
+  console.log('[bedrock-diag] AWS_ACCESS_KEY_ID present:', Boolean(process.env.AWS_ACCESS_KEY_ID));
+  console.log('[bedrock-diag] AWS_SESSION_TOKEN present:', Boolean(process.env.AWS_SESSION_TOKEN));
+  console.log('[bedrock-diag] AWS_REGION:', process.env.AWS_REGION);
+  console.log('[bedrock-diag] BEDROCK_MODEL_ID:', process.env.BEDROCK_MODEL_ID);
+
   const requestBody = {
     anthropic_version: ANTHROPIC_VERSION,
     max_tokens: MAX_TOKENS,
