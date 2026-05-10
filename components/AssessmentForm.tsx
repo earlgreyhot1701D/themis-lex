@@ -114,7 +114,8 @@ export default function AssessmentForm({
         </div>
         <p className="form-section__copy">
           Three short inputs. Nothing you enter is stored or used to train any
-          model.
+          model. We count completed assessments to improve the tool — no
+          identifying information is collected.
         </p>
       </div>
 
