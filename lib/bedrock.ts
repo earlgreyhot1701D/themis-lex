@@ -25,7 +25,7 @@ import {
 // Do not build until v1 is shipped and credit budget allows.
 
 const TEMPERATURE = 0.2;
-const MAX_TOKENS = 3000;
+const MAX_TOKENS = 2000;
 const ANTHROPIC_VERSION = 'bedrock-2023-05-31';
 
 interface BedrockSuccess {
