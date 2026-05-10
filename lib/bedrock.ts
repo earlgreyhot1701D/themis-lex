@@ -2,11 +2,17 @@
  * AWS Bedrock client wrapper for Themis Lex.
  * One responsibility: send a prompt to Claude Sonnet via Bedrock and return parsed JSON.
  * See Prompt Spec v1.2 Section 4 for temperature and call pattern.
+ *
+ * Uses InvokeModelWithResponseStreamCommand to keep the Lambda alive during
+ * generation. Amplify Hosting SSR has a hard 28-second timeout — streaming
+ * keeps the connection active because the Lambda is receiving data, not
+ * waiting silently. The full response is collected server-side and returned
+ * as a single JSON payload to the client.
  */
 
 import {
   BedrockRuntimeClient,
-  InvokeModelCommand,
+  InvokeModelWithResponseStreamCommand,
 } from '@aws-sdk/client-bedrock-runtime';
 
 // STUB V2: Two-call differential temperature
@@ -47,6 +53,8 @@ function createClient(): BedrockRuntimeClient {
 
 /**
  * Sends a single prompt to Claude Sonnet via Bedrock at temperature 0.2.
+ * Uses response streaming to keep the Lambda alive during generation.
+ * Collects all chunks into a complete response, then parses the JSON.
  * Returns parsed JSON response or a structured error.
  *
  * Request body follows the Anthropic-on-Bedrock format:
@@ -58,12 +66,6 @@ export async function callBedrock(
   userMessage: string
 ): Promise<BedrockResult> {
   const modelId = process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-sonnet-4-6';
-
-  // DIAGNOSTIC — remove after confirming credential injection
-  console.log('[bedrock-diag] AWS_ACCESS_KEY_ID present:', Boolean(process.env.AWS_ACCESS_KEY_ID));
-  console.log('[bedrock-diag] AWS_SESSION_TOKEN present:', Boolean(process.env.AWS_SESSION_TOKEN));
-  console.log('[bedrock-diag] AWS_REGION:', process.env.AWS_REGION);
-  console.log('[bedrock-diag] BEDROCK_MODEL_ID:', process.env.BEDROCK_MODEL_ID);
 
   const requestBody = {
     anthropic_version: ANTHROPIC_VERSION,
@@ -80,7 +82,7 @@ export async function callBedrock(
 
   try {
     const client = createClient();
-    const command = new InvokeModelCommand({
+    const command = new InvokeModelWithResponseStreamCommand({
       modelId,
       contentType: 'application/json',
       accept: 'application/json',
@@ -89,14 +91,8 @@ export async function callBedrock(
 
     const response = await client.send(command);
 
-    // Parse the response body
-    const responseBody = new TextDecoder().decode(response.body);
-
-    let parsed: Record<string, unknown>;
-    try {
-      parsed = JSON.parse(responseBody);
-    } catch {
-      console.error('Bedrock response is not valid JSON');
+    if (!response.body) {
+      console.error('Bedrock stream response has no body');
       return {
         success: false,
         message:
@@ -104,20 +100,29 @@ export async function callBedrock(
       };
     }
 
-    // Extract the text content from the Anthropic response format
-    const content = parsed.content as Array<{ type: string; text: string }> | undefined;
-    if (!content || !Array.isArray(content) || content.length === 0) {
-      console.error('Bedrock response missing content array');
-      return {
-        success: false,
-        message:
-          "We weren't able to complete your assessment. Please try again. If the issue continues, contact your supervisor.",
-      };
+    // Collect all streamed chunks into a single text string
+    let fullText = '';
+
+    for await (const event of response.body) {
+      if (event.chunk?.bytes) {
+        const chunkData = JSON.parse(
+          new TextDecoder().decode(event.chunk.bytes)
+        );
+
+        // Anthropic streaming format: content_block_delta events contain text
+        if (chunkData.type === 'content_block_delta' && chunkData.delta?.text) {
+          fullText += chunkData.delta.text;
+        }
+
+        // message_stop signals end of generation
+        if (chunkData.type === 'message_stop') {
+          break;
+        }
+      }
     }
 
-    const textBlock = content.find((block) => block.type === 'text');
-    if (!textBlock || typeof textBlock.text !== 'string') {
-      console.error('Bedrock response missing text block');
+    if (!fullText) {
+      console.error('Bedrock stream produced no text content');
       return {
         success: false,
         message:
@@ -128,9 +133,9 @@ export async function callBedrock(
     // Parse the model's JSON output
     let assessmentData: unknown;
     try {
-      assessmentData = JSON.parse(textBlock.text);
+      assessmentData = JSON.parse(fullText);
     } catch {
-      console.error('Model output is not valid JSON');
+      console.error('Model output is not valid JSON. First 500 chars:', fullText.substring(0, 500));
       return {
         success: false,
         message:
@@ -151,3 +156,5 @@ export async function callBedrock(
     };
   }
 }
+
+export { BedrockResult };
