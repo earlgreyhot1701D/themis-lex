@@ -130,12 +130,24 @@ export async function callBedrock(
       };
     }
 
+    // Strip markdown code fences if the model wraps its JSON response in them
+    let cleanedText = fullText.trim();
+    if (cleanedText.startsWith('```json')) {
+      cleanedText = cleanedText.slice(7);
+    } else if (cleanedText.startsWith('```')) {
+      cleanedText = cleanedText.slice(3);
+    }
+    if (cleanedText.endsWith('```')) {
+      cleanedText = cleanedText.slice(0, -3);
+    }
+    cleanedText = cleanedText.trim();
+
     // Parse the model's JSON output
     let assessmentData: unknown;
     try {
-      assessmentData = JSON.parse(fullText);
+      assessmentData = JSON.parse(cleanedText);
     } catch {
-      console.error('Model output is not valid JSON. First 500 chars:', fullText.substring(0, 500));
+      console.error('Model output is not valid JSON. First 500 chars:', cleanedText.substring(0, 500));
       return {
         success: false,
         message:
