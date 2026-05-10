@@ -42,9 +42,6 @@ export default function Home() {
     setAppState('loading');
     setErrorMessage('');
 
-    const defaultError =
-      "We weren't able to complete your assessment. Please try again. If the issue continues, contact your supervisor.";
-
     try {
       const response = await fetch('/api/assess', {
         method: 'POST',
@@ -52,66 +49,22 @@ export default function Home() {
         body: JSON.stringify(data),
       });
 
-      // Non-streaming error responses (400, 405, 429, 502) return JSON
-      if (!response.ok) {
-        let msg = defaultError;
-        try {
-          const errJson = await response.json();
-          if (errJson.message) msg = errJson.message;
-        } catch {
-          // Use default message
-        }
-        setErrorMessage(msg);
-        setAppState('error');
-        return;
-      }
-
-      // Streaming response — read chunks via ReadableStream
-      const reader = response.body?.getReader();
-      if (!reader) {
-        setErrorMessage(defaultError);
-        setAppState('error');
-        return;
-      }
-
-      const decoder = new TextDecoder();
-      let accumulated = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        accumulated += decoder.decode(value, { stream: true });
-      }
-
-      // Check for stream error marker
-      if (accumulated.includes('__STREAM_ERROR__')) {
-        setErrorMessage(defaultError);
-        setAppState('error');
-        return;
-      }
-
-      // Parse the accumulated JSON
       let json;
       try {
-        json = JSON.parse(accumulated);
+        json = await response.json();
       } catch {
-        console.error('Failed to parse streamed response as JSON');
-        setErrorMessage(defaultError);
+        setErrorMessage(
+          "We weren't able to complete your assessment. Please try again. If the issue continues, contact your supervisor."
+        );
         setAppState('error');
         return;
       }
 
-      // Client-side structural validation (moved from server due to streaming)
-      if (
-        !json.can_help ||
-        !Array.isArray(json.can_help) ||
-        json.can_help.length === 0 ||
-        !json.must_not_touch ||
-        !Array.isArray(json.must_not_touch) ||
-        json.must_not_touch.length === 0
-      ) {
-        console.error('Response missing required arrays');
-        setErrorMessage(defaultError);
+      if (!response.ok || json.error) {
+        setErrorMessage(
+          json.message ||
+            "We weren't able to complete your assessment. Please try again. If the issue continues, contact your supervisor."
+        );
         setAppState('error');
         return;
       }
@@ -119,7 +72,9 @@ export default function Home() {
       setResults(json);
       setAppState('results');
     } catch {
-      setErrorMessage(defaultError);
+      setErrorMessage(
+        "We weren't able to complete your assessment. Please try again. If the issue continues, contact your supervisor."
+      );
       setAppState('error');
     }
   }, []);
