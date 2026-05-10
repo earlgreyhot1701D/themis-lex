@@ -16,6 +16,12 @@ const CSP_REPORT_ONLY =
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Forward server-side env vars to the SSR runtime.
+  // Amplify injects env vars at build time only; Next.js inlines these
+  // into the server bundle so they're available at request time.
+  env: {
+    BEDROCK_MODEL_ID: process.env.BEDROCK_MODEL_ID,
+  },
   async headers() {
     return [
       {
