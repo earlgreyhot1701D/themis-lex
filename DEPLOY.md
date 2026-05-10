@@ -1,16 +1,34 @@
 # Themis Lex — Deployment & Rollback
 
-## Environment variables required
+## Environment variables and credentials
+
+### Local development (.env.local)
+
+| Name | Notes |
+| --- | --- |
+| `AWS_REGION` | Bedrock region. Locked to `us-east-1` (matches the cross-region inference profile referenced by `BEDROCK_MODEL_ID`). |
+| `AWS_ACCESS_KEY_ID` | **Never commit.** IAM user with Bedrock invoke permission only. |
+| `AWS_SECRET_ACCESS_KEY` | **Never commit.** Pair of the access key above. |
+| `BEDROCK_MODEL_ID` | The Claude Sonnet 4.6 Bedrock model ID (cross-region inference profile, `us.` prefix). |
+| `NEXT_PUBLIC_APP_VERSION` | Surfaced in the UI footer. Bump on each deploy. |
+
+### Production (Amplify Hosting)
 
 | Name | Where set | Notes |
 | --- | --- | --- |
-| `AWS_REGION` | Amplify Console | Bedrock region. Locked to `us-east-1` (matches the cross-region inference profile referenced by `BEDROCK_MODEL_ID`). |
-| `AWS_ACCESS_KEY_ID` | Amplify Console | **Never commit.** IAM user with Bedrock invoke permission only. |
-| `AWS_SECRET_ACCESS_KEY` | Amplify Console | **Never commit.** Pair of the access key above. |
-| `BEDROCK_MODEL_ID` | Amplify Console | The Claude Sonnet 4.6 Bedrock model ID (cross-region inference profile, `us.` prefix). |
-| `NEXT_PUBLIC_APP_VERSION` | Amplify Console | Surfaced in the UI footer. Bump on each deploy. |
+| `NEXT_PUBLIC_APP_VERSION` | Amplify Console > App settings > Environment variables | Surfaced in the UI footer. Bump on each deploy. |
 
-The two AWS credentials MUST be configured through the Amplify Console under **App > Hosting > Environment variables**. They must never be added to `.env`, `.env.local`, or any committed file.
+AWS credentials and region are provided automatically by the compute role. BEDROCK_MODEL_ID has a hardcoded fallback in lib/bedrock.ts and is intentionally not set in Amplify Console.
+
+## IAM compute role
+
+The IAM role `themis-lex-amplify-compute-role` provides AWS credentials to the SSR Lambda runtime in production. The AWS SDK default credential provider chain picks up the STS-assumed credentials automatically — no env-var wiring is needed in Amplify Console.
+
+- **Trust policy:** allows the `amplify.amazonaws.com` service principal to call `sts:AssumeRole`.
+- **Attached policy:** `themis-lex-bedrock-invoke-only` (least-privilege Bedrock `InvokeModel` permission).
+- **Attachment path:** Amplify Console > App settings > IAM roles > Compute role.
+
+Reference: [IAM compute roles for server-side rendering with AWS Amplify Hosting](https://aws.amazon.com/blogs/mobile/iam-compute-roles-for-server-side-rendering-with-aws-amplify-hosting/).
 
 ## Deploying
 
