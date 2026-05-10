@@ -156,5 +156,3 @@ export async function callBedrock(
     };
   }
 }
-
-export { BedrockResult };
