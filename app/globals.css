@@ -105,6 +105,25 @@ body {
   padding-top: var(--s10);
   padding-bottom: var(--s8);
 }
+.hero__content {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s6);
+}
+.hero__text {
+  flex: 1;
+  min-width: 0;
+}
+.hero__mark {
+  flex-shrink: 0;
+  width: 160px;
+}
+.hero__mark-img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  opacity: 0.9;
+}
 .hero__eyebrow {
   font-family: var(--sans);
   font-size: 11px;
@@ -778,6 +797,7 @@ textarea:disabled {
   .hero__title { font-size: 42px; }
   .hero__lede { font-size: 16px; }
   .hero { padding-top: var(--s6); padding-bottom: var(--s5); }
+  .hero__mark { display: none; }
 
   .form-section__head {
     grid-template-columns: 1fr;

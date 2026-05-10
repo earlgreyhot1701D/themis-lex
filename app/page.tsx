@@ -147,20 +147,32 @@ export default function Home() {
 
       {/* Hero */}
       <section className="wrap hero" aria-labelledby="hero-title">
-        <div className="hero__eyebrow">
-          A Self-Check Tool · Beta Release · Spring 2026
+        <div className="hero__content">
+          <div className="hero__text">
+            <div className="hero__eyebrow">
+              A Self-Check Tool · Beta Release · Spring 2026
+            </div>
+            <h1 id="hero-title" className="hero__title">
+              Know where AI helps.
+              <br />
+              Know where it <em>must not</em>.
+            </h1>
+            <p className="hero__lede">
+              Themis Lex is a plain-language readiness check for California Superior
+              Court staff. Describe a workflow in your own words and receive a
+              considered review — what AI can safely assist with today, and what
+              stays firmly in human hands.
+            </p>
+          </div>
+          <div className="hero__mark">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/themis-lex-hero.png"
+              alt="Themis Lex — scales of justice with circuit board motif"
+              className="hero__mark-img"
+            />
+          </div>
         </div>
-        <h1 id="hero-title" className="hero__title">
-          Know where AI helps.
-          <br />
-          Know where it <em>must not</em>.
-        </h1>
-        <p className="hero__lede">
-          Themis Lex is a plain-language readiness check for California Superior
-          Court staff. Describe a workflow in your own words and receive a
-          considered review — what AI can safely assist with today, and what
-          stays firmly in human hands.
-        </p>
         <div className="hero__rule" role="presentation" />
       </section>
 
