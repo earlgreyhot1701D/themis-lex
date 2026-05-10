@@ -89,11 +89,15 @@ export default function ResultsPanel({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       setPdfLoading(false);
+      // Track successful PDF download
+      try { fetch('/api/analytics', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: 'pdf_downloaded' }) }).catch(() => {}); } catch {}
     } catch {
       setPdfError(
         "We weren't able to generate your PDF report. Please try again. If the issue continues, you can take a screenshot of your results as a temporary alternative."
       );
       setPdfLoading(false);
+      // Track PDF error
+      try { fetch('/api/analytics', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event: 'pdf_error' }) }).catch(() => {}); } catch {}
     }
   }, [roleLabel, sensitivityLabel, results, pdfLoading]);
 

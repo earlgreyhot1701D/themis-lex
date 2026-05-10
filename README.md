@@ -25,7 +25,7 @@ npm run dev
 
 ## Heads up: AWS Amplify Hosting + Bedrock gotchas
 
-If you're forking this project to deploy your own version, there are four AWS gotchas that cost us more than half a day of debugging. AWS docs underspecify all of them. Hopefully this saves you the same time.
+If you're forking this project to deploy your own version, there are six AWS gotchas that cost us a full day of debugging. AWS docs underspecify all of them. Hopefully this saves you the same time.
 
 ### Gotcha 1: The trust policy needs two principals, not one
 
@@ -59,6 +59,26 @@ That's only enough for the build service to assume the role. The runtime Lambda 
 
 **Symptom if you miss this:** API routes hang for exactly 28 seconds, then Lambda kills the request with "Request timed out." No error logged from your code, because the AWS SDK never reaches your service. It's stuck in the credential provider chain looking for a role it can't assume.
 
+**Related coding trap worth knowing about:** if your SDK client code passes an explicit `credentials:` object even with empty string values, the AWS SDK disables the credential provider chain entirely and tries to sign requests with those empty strings. Result is a silent hang identical to the trust policy bug.
+
+```typescript
+// WRONG — disables the provider chain
+new BedrockRuntimeClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+  },
+});
+
+// CORRECT — uses provider chain, picks up compute role creds at runtime
+new BedrockRuntimeClient({
+  region: process.env.AWS_REGION,
+});
+```
+
+Omit the `credentials` object entirely when using IAM compute roles. The SDK's default credential provider chain handles both local dev (reading from `.env.local`) and production (from the Lambda runtime's STS-assumed role) automatically.
+
 ### Gotcha 2: Attach the compute role at the BRANCH level, not just the app level
 
 Amplify Console has two places to attach a compute role:
@@ -86,7 +106,51 @@ aws amplify update-branch \
 
 Symptom is the same as Gotcha 1: 28-second hang on API routes, no error logged.
 
-### Gotcha 3: Amplify SSR Lambdas have a 28-second hard timeout that cannot be raised
+### Gotcha 3: Environment variables don't reach the SSR Lambda runtime
+
+You set `BEDROCK_MODEL_ID` (or any non-`AWS_`-prefixed env var) in Amplify Console > App settings > Environment variables. The build picks it up fine — you can see it referenced in build logs. But at runtime, `process.env.BEDROCK_MODEL_ID` is `undefined`. Same value, set in the same place, available during `npm run build`, missing inside the running Lambda.
+
+Amplify environment variables flow into the BUILD environment (CodeBuild) but are not automatically injected into the SSR Lambda's runtime. Vercel, Railway, Render, and most other hosting platforms make env vars available at both. Amplify's split between build and runtime is a real platform difference.
+
+**Fix:** tell Next.js to bake the value into the server bundle at build time. In `next.config.js`:
+
+```js
+const nextConfig = {
+  env: {
+    BEDROCK_MODEL_ID: process.env.BEDROCK_MODEL_ID,
+    // any other server-side env vars you need at runtime
+  },
+};
+```
+
+This captures the value during `next build` and inlines it into the compiled server code. The runtime no longer depends on Amplify injecting the var because it is part of the bundle.
+
+**Symptom if you miss this:** API routes work locally with `npm run dev` (env reads from `.env.local`) but fail in production with errors like `BEDROCK_MODEL_ID is undefined` or, if you have a fallback default in code, the production app silently uses the fallback instead of the value you set in Amplify Console.
+
+### Gotcha 4: Bedrock requires AWS Marketplace permissions on the IAM policy
+
+Even after granting `bedrock:InvokeModel` on the right resources, your Bedrock call may fail with `AccessDeniedException` mentioning Marketplace actions you didn't think you were using.
+
+Since September 2025, Bedrock auto-enables models on first call. The auto-enable happens silently via AWS Marketplace and requires the calling IAM principal to have permission to view and subscribe to Marketplace listings. The old Bedrock Console "Model access" page where you manually opted in is retired. The new auto-enable system replaced it but kept an IAM permission requirement under a different action namespace.
+
+**Fix:** add these to your IAM policy alongside the existing Bedrock actions:
+
+```json
+{
+  "Effect": "Allow",
+  "Action": [
+    "aws-marketplace:ViewSubscriptions",
+    "aws-marketplace:Subscribe"
+  ],
+  "Resource": "*"
+}
+```
+
+`Resource: "*"` is required because Marketplace subscriptions aren't tied to specific Bedrock model ARNs.
+
+**Symptom if you miss this:** `AccessDeniedException` with a message about Marketplace actions, not Bedrock actions. The error message is accurate but unintuitive because Marketplace is the silent backend system Bedrock uses for model enablement. Common reaction: "I configured Bedrock permissions, why am I getting a Marketplace error?"
+
+### Gotcha 5: Amplify SSR Lambdas have a 28-second hard timeout that cannot be raised
 
 After fixing both auth issues above, you might still see API routes time out at exactly 28 seconds. This is not a configuration mistake on your side. Amplify Hosting SSR Lambdas have a 28-second invocation timeout that cannot be increased, regardless of your AWS account's normal Lambda timeout settings.
 
@@ -104,7 +168,7 @@ This change touches three places:
 
 **Symptom if you miss this:** API routes hang for exactly 28 seconds, get killed with "Request timed out." Unlike Gotchas 1 and 2, you will see partial logs in CloudWatch showing the Bedrock call started successfully (credential resolution worked, the SDK call went through). The Lambda dies mid-response, not before the SDK reaches Bedrock.
 
-### Gotcha 4: Next.js Pages API routes don't truly stream on Amplify Hosting
+### Gotcha 6: Next.js Pages API routes don't truly stream on Amplify Hosting
 
 After implementing the streaming fix from Gotcha 3, you may find your API routes still time out at the gateway. The Lambda is receiving Bedrock chunks correctly via async iteration, your code is calling `res.write(chunk)` for each one, but the gateway still kills the connection.
 
@@ -124,7 +188,7 @@ For LLM-heavy workloads with synchronous structured output, Vercel Pro is genera
 
 ### Why none of these gotchas appear clearly in the obvious places
 
-All four are filed as open issues on aws-amplify/amplify-hosting. The official docs cover the build pathway clearly but treat the runtime pathway as an implementation detail. You are not the first dev to hit any of them. Just the cost of doing business on Amplify Hosting in Spring 2026.
+All six are documented in scattered AWS GitHub issues, community forum posts, or buried in docs that the quickstart pages don't link to. The Amplify Hosting docs cover the build pathway clearly but treat the runtime pathway as an implementation detail. The Bedrock Marketplace requirement appeared after the September 2025 auto-enable change and isn't loudly announced anywhere. You are not the first dev to hit any of these. Just the cost of doing business on Amplify Hosting in Spring 2026.
 
 ---
 

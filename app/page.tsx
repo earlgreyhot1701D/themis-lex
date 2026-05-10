@@ -23,6 +23,21 @@ const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '0.4';
 
 type AppState = 'default' | 'loading' | 'results' | 'error';
 
+/**
+ * Fire-and-forget analytics event. Never blocks UI. Never throws.
+ */
+function trackEvent(event: string, meta?: Record<string, unknown>) {
+  try {
+    fetch('/api/analytics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event, ...meta }),
+    }).catch(() => { /* silent — analytics should never break the app */ });
+  } catch {
+    /* silent */
+  }
+}
+
 const ROLE_LABELS: Record<string, string> = {
   ja1_2: 'Judicial Assistant I / II',
   ja3_courtroom: 'Judicial Assistant III Courtroom',
@@ -41,6 +56,7 @@ export default function Home() {
     setFormData(data);
     setAppState('loading');
     setErrorMessage('');
+    const startTime = Date.now();
 
     try {
       const response = await fetch('/api/assess', {
@@ -57,6 +73,7 @@ export default function Home() {
           "We weren't able to complete your assessment. Please try again. If the issue continues, contact your supervisor."
         );
         setAppState('error');
+        trackEvent('assessment_error', { role: data.role, sensitivity: data.sensitivity });
         return;
       }
 
@@ -66,16 +83,23 @@ export default function Home() {
             "We weren't able to complete your assessment. Please try again. If the issue continues, contact your supervisor."
         );
         setAppState('error');
+        trackEvent('assessment_error', { role: data.role, sensitivity: data.sensitivity });
         return;
       }
 
       setResults(json);
       setAppState('results');
+      trackEvent('assessment_completed', {
+        role: data.role,
+        sensitivity: data.sensitivity,
+        duration_ms: Date.now() - startTime,
+      });
     } catch {
       setErrorMessage(
         "We weren't able to complete your assessment. Please try again. If the issue continues, contact your supervisor."
       );
       setAppState('error');
+      trackEvent('assessment_error', { role: data.role, sensitivity: data.sensitivity });
     }
   }, []);
 
@@ -90,6 +114,7 @@ export default function Home() {
     setFormData(null);
     setErrorMessage('');
     setFormResetKey((k) => k + 1);
+    trackEvent('start_over');
     // Scroll to the top of the form section
     setTimeout(() => {
       formSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
