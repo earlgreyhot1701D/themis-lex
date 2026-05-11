@@ -106,18 +106,17 @@ body {
   padding-bottom: var(--s8);
 }
 .hero__content {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: var(--s8);
 }
 .hero__text {
-  flex: 1;
   min-width: 0;
 }
 .hero__mark {
-  flex-shrink: 0;
   width: 180px;
-  align-self: center;
+  justify-self: end;
 }
 .hero__mark-img {
   width: 100%;
@@ -800,6 +799,7 @@ textarea:disabled {
   .hero__lede { font-size: 16px; }
   .hero { padding-top: var(--s6); padding-bottom: var(--s5); }
   .hero__mark { display: none; }
+  .hero__content { grid-template-columns: 1fr; }
 
   .form-section__head {
     grid-template-columns: 1fr;
