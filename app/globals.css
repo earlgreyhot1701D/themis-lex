@@ -107,8 +107,8 @@ body {
 }
 .hero__content {
   display: flex;
-  align-items: flex-start;
-  gap: var(--s6);
+  align-items: center;
+  gap: var(--s8);
 }
 .hero__text {
   flex: 1;
@@ -116,13 +116,15 @@ body {
 }
 .hero__mark {
   flex-shrink: 0;
-  width: 160px;
+  width: 180px;
+  align-self: center;
 }
 .hero__mark-img {
   width: 100%;
   height: auto;
-  border-radius: 8px;
-  opacity: 0.9;
+  border-radius: 10px;
+  box-shadow: 0 4px 24px -8px rgba(28,28,28,0.12);
+  border: 1px solid var(--rule);
 }
 .hero__eyebrow {
   font-family: var(--sans);
