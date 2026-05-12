@@ -380,6 +380,21 @@ textarea:focus-visible {
 .btn-primary[aria-disabled="true"] + .disabled-helper { display: block; }
 
 /* ============================================================
+   RESULTS NOTICE (not-saved info bar)
+   ============================================================ */
+.results-notice {
+  background: var(--rule-soft);
+  border-left: 3px solid var(--ink-3);
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin-bottom: var(--s4);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* ============================================================
    RESULTS SECTION
    ============================================================ */
 .results-section {

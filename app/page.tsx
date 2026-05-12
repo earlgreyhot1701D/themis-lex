@@ -227,12 +227,18 @@ export default function Home() {
         {appState === 'loading' && <LoadingState />}
         {appState === 'error' && <ErrorState message={errorMessage} onStartOver={handleStartOver} />}
         {appState === 'results' && results && (
-          <ResultsPanel
-            results={results}
-            roleLabel={roleLabel}
-            sensitivityLabel={sensitivityLabel}
-            onStartOver={handleStartOver}
-          />
+          <>
+            <p className="results-notice">
+              This assessment is not saved. Download the PDF or copy your results
+              before leaving this page.
+            </p>
+            <ResultsPanel
+              results={results}
+              roleLabel={roleLabel}
+              sensitivityLabel={sensitivityLabel}
+              onStartOver={handleStartOver}
+            />
+          </>
         )}
       </section>
 
