@@ -5,6 +5,30 @@ export const metadata: Metadata = {
   title: 'Themis Lex — AI Readiness for California Court Staff',
   description:
     'A plain-language readiness check for California Superior Court staff. Know where AI helps. Know where it must not.',
+  metadataBase: new URL('https://themislex.org'),
+  openGraph: {
+    title: 'Themis Lex — AI Readiness for California Court Staff',
+    description:
+      'Know where AI helps. Know where it must not. A plain-language readiness check built for California Superior Court staff.',
+    url: 'https://themislex.org',
+    siteName: 'Themis Lex',
+    images: [
+      {
+        url: '/themis-lex-hero.png',
+        width: 1024,
+        height: 1024,
+        alt: 'Themis Lex — scales of justice with circuit board motif',
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Themis Lex — AI Readiness for California Court Staff',
+    description:
+      'Know where AI helps. Know where it must not. Built for California Superior Court staff.',
+    images: ['/themis-lex-hero.png'],
+  },
 };
 
 export default function RootLayout({
