@@ -1,16 +1,16 @@
 /**
  * AWS Bedrock client wrapper for Themis Lex.
- * One responsibility: send a prompt to Claude Sonnet via Bedrock and return parsed JSON.
- * See Prompt Spec v1.2 Section 4 for temperature and call pattern.
+ * One responsibility: send a prompt to Claude via Bedrock and return parsed JSON.
+ * Model is configurable via BEDROCK_MODEL_ID env var; falls back to Claude
+ * Haiku 4.5 (hardcoded on line 70). See Prompt Spec v1.2 Section 4.
  *
  * Uses InvokeModelWithResponseStreamCommand to collect the response via streaming.
  * This keeps the Lambda process alive during generation (Amplify SSR has a 30s
  * hard timeout). The full response is collected server-side and returned as JSON.
  *
- * max_tokens reduced to 3000 to keep total generation time under 25 seconds.
- * At 6000 tokens, generation took ~42s which exceeded the Amplify timeout.
- * At 3000 tokens, responses are still complete (3-5 items per array with
- * multi-sentence fields) but generate in ~18-25 seconds.
+ * max_tokens history: started at 6000 (initial commit), cut to 3000 then 2000
+ * chasing the Amplify timeout with Sonnet, raised back to 4000 after the
+ * Haiku 4.5 swap made generation fast enough to fit.
  */
 
 import {
@@ -55,13 +55,13 @@ function createClient(): BedrockRuntimeClient {
 }
 
 /**
- * Sends a single prompt to Claude Sonnet via Bedrock at temperature 0.2.
+ * Sends a single prompt to Claude via Bedrock at temperature 0.2.
  * Uses response streaming to collect chunks (keeps Lambda alive during generation).
  * Returns parsed JSON response or a structured error.
  *
  * Request body follows the Anthropic-on-Bedrock format:
  * - system prompt goes in the top-level "system" field, NOT inside messages
- * - max_tokens set to 3000 to keep generation under Amplify's 30s timeout
+ * - max_tokens set to 4000 to keep generation under Amplify's 30s timeout
  */
 export async function callBedrock(
   systemPrompt: string,

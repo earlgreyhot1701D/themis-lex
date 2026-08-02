@@ -9,7 +9,7 @@
 | `AWS_REGION` | Bedrock region. Locked to `us-east-1` (matches the cross-region inference profile referenced by `BEDROCK_MODEL_ID`). |
 | `AWS_ACCESS_KEY_ID` | **Never commit.** IAM user with Bedrock invoke permission only. |
 | `AWS_SECRET_ACCESS_KEY` | **Never commit.** Pair of the access key above. |
-| `BEDROCK_MODEL_ID` | The Claude Sonnet 4.6 Bedrock model ID (cross-region inference profile, `us.` prefix). |
+| `BEDROCK_MODEL_ID` | The Bedrock model ID (cross-region inference profile, `us.` prefix). Currently Claude Haiku 4.5 (`us.anthropic.claude-haiku-4-5-20251001-v1:0`). Sonnet 4.6 is the v2 target once the endpoint moves off Amplify SSR. |
 | `NEXT_PUBLIC_APP_VERSION` | Surfaced in the UI footer. Bump on each deploy. |
 
 ### Production (Amplify Hosting)
@@ -24,7 +24,7 @@ AWS credentials and region are provided automatically by the compute role. BEDRO
 
 The IAM role `themis-lex-amplify-compute-role` provides AWS credentials to the SSR Lambda runtime in production. The AWS SDK default credential provider chain picks up the STS-assumed credentials automatically — no env-var wiring is needed in Amplify Console.
 
-- **Trust policy:** allows the `amplify.amazonaws.com` service principal to call `sts:AssumeRole`.
+- **Trust policy:** allows `amplify.amazonaws.com` (build service) and `lambda.amazonaws.com` (SSR runtime) to call `sts:AssumeRole`. Both principals are required — see README.md "Gotcha 1" for the full rationale. Note: the `lambda.amazonaws.com` principal was added at the same time as other credential fixes, so it has not been independently verified as the sole fix. Official AWS docs show only `amplify.amazonaws.com`.
 - **Attached policy:** `themis-lex-bedrock-invoke-only` (least-privilege Bedrock `InvokeModel` permission).
 - **Attachment path:** Amplify Console > App settings > IAM roles > Compute role.
 
