@@ -18,6 +18,22 @@ import {
   InvokeModelWithResponseStreamCommand,
 } from '@aws-sdk/client-bedrock-runtime';
 
+/**
+ * Thrown when a required environment variable is missing at request time.
+ * Named error so the API route can distinguish config failure from Bedrock failure.
+ * Object.setPrototypeOf is required because tsconfig targets ES5 and
+ * subclassing built-ins does not survive downleveling without it.
+ */
+export class BedrockConfigError extends Error {
+  readonly envVar: string;
+  constructor(envVar: string) {
+    super(`Missing required environment variable: ${envVar}`);
+    this.name = 'BedrockConfigError';
+    this.envVar = envVar;
+    Object.setPrototypeOf(this, BedrockConfigError.prototype);
+  }
+}
+
 // STUB V2: Two-call differential temperature
 // Implementation notes: split assessment into two Bedrock calls with the same system prompt
 // and user message but request only one array per call. Call 1 at 0.7 returns can_help only.
@@ -67,7 +83,15 @@ export async function callBedrock(
   systemPrompt: string,
   userMessage: string
 ): Promise<BedrockResult> {
-  const modelId = process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-haiku-4-5-20251001-v1:0';
+  // BEDROCK_MODEL_ID is inlined by next.config.js at build time, so in
+  // production this value is a string literal baked into the bundle and this
+  // guard never fires. It still protects local dev and any edge case where
+  // the inline does not apply. Layer 1 (next.config.js) is the actual
+  // production protection.
+  const modelId = process.env.BEDROCK_MODEL_ID;
+  if (!modelId) {
+    throw new BedrockConfigError('BEDROCK_MODEL_ID');
+  }
 
   const requestBody = {
     anthropic_version: ANTHROPIC_VERSION,

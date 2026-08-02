@@ -7,7 +7,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { validateInput, validateResponse, isValidationError } from '@/lib/validate';
 import { assemblePrompt } from '@/lib/prompt';
-import { callBedrock } from '@/lib/bedrock';
+import { callBedrock, BedrockConfigError } from '@/lib/bedrock';
 import { checkRateLimit } from '@/lib/rateLimit';
 
 const USER_FACING_ERROR =
@@ -79,6 +79,19 @@ export default async function handler(
     // Step 5: Return validated response — no user data stored
     return res.status(200).json(bedrockResult.data);
   } catch (error) {
+    // Config error — missing env var. Log specific var server-side,
+    // return generic message to client (no leaked internals).
+    if (
+      error instanceof BedrockConfigError ||
+      (error as Error)?.name === 'BedrockConfigError'
+    ) {
+      console.error(`[config] ${(error as Error).message}`);
+      return res.status(500).json({
+        error: true,
+        message: 'Service is misconfigured. Please contact support.',
+      });
+    }
+
     console.error('Unexpected error in /api/assess:', error);
     return res.status(500).json({
       error: true,

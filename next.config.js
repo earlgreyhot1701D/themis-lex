@@ -14,6 +14,24 @@
 const CSP_REPORT_ONLY =
   "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
 
+// Fail the production build if BEDROCK_MODEL_ID is missing.
+// Amplify injects env vars at build time only. If this is empty, the inlined
+// value will be undefined and the app will deploy without a model configured.
+// Local builds pass because Next.js loads .env.local before evaluating this file.
+// (next build sets NODE_ENV=production on its own, so .env.local is the only
+// reason a local build does not hit this check.)
+const isProductionBuild =
+  process.env.NODE_ENV === 'production' ||
+  Boolean(process.env.AWS_APP_ID); // AWS_APP_ID is set in Amplify build env
+
+if (isProductionBuild && !process.env.BEDROCK_MODEL_ID) {
+  throw new Error(
+    'BEDROCK_MODEL_ID is not set. ' +
+    'Set it in Amplify Console > App settings > Environment variables. ' +
+    'The build cannot continue without a configured model ID.'
+  );
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Forward server-side env vars to the SSR runtime.
