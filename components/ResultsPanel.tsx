@@ -103,6 +103,47 @@ export default function ResultsPanel({
 
   return (
     <>
+      {/* Compact top download trigger — convenience entry point placed above
+          the results so the primary next action is discoverable without
+          scrolling. Reuses the same handler/state as the bottom action bar;
+          no duplicated logic or state. */}
+      <div className="results-actions">
+        <button
+          className="btn-download"
+          aria-label="Download your AI readiness assessment as a PDF"
+          onClick={handleDownload}
+          disabled={pdfLoading}
+        >
+          <span className="pdf-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <path
+                d="M4 2h8l4 4v12H4V2z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinejoin="miter"
+              />
+              <path d="M12 2v4h4" stroke="currentColor" strokeWidth="1.5" />
+              <path
+                d="M10 9v6M7 12l3 3 3-3"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="square"
+              />
+            </svg>
+          </span>
+          {pdfLoading ? 'Generating PDF…' : 'Download PDF Report'}
+        </button>
+        {/* Single source of truth for PDF error feedback. role="alert" makes a
+            failure from EITHER button discoverable immediately (announced +
+            visible at the top) without scrolling to the action bar. Rendered
+            once in the DOM — no duplicate node, no duplicate announcement. */}
+        {pdfError && (
+          <p className="results-actions__error" role="alert">
+            {pdfError}
+          </p>
+        )}
+      </div>
+
       <div className="two-col">
         {/* Left column: Where AI Can Help */}
         <div className="col-wrap col-wrap--help">
@@ -191,14 +232,6 @@ export default function ResultsPanel({
           </span>
           {pdfLoading ? 'Generating PDF…' : 'Download PDF Report'}
         </button>
-        {pdfError && (
-          <p
-            className="action-disclaimer"
-            style={{ color: 'var(--terra-deep)', marginTop: '12px' }}
-          >
-            {pdfError}
-          </p>
-        )}
         <p className="action-disclaimer">
           This assessment is advisory. It does not replace supervisory review,
           court IT policy, or the Judicial Council&#39;s forthcoming AI

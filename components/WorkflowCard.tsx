@@ -38,7 +38,7 @@ export default function WorkflowCard(props: WorkflowCardProps) {
           <div className="wf-row__label">Why it&#39;s safe</div>
           <div className="wf-row__value">{item.why_safe}</div>
         </div>
-        <div className="wf-row">
+        <div className="wf-row wf-row--action">
           <div className="wf-row__label">Guardrails</div>
           <div className="wf-row__value">{item.guardrails}</div>
         </div>
@@ -61,7 +61,7 @@ export default function WorkflowCard(props: WorkflowCardProps) {
         <div className="wf-row__label">Risk</div>
         <div className="wf-row__value">{item.risk}</div>
       </div>
-      <div className="wf-row">
+      <div className="wf-row wf-row--action">
         <div className="wf-row__label">Instead</div>
         <div className="wf-row__value">{item.instead}</div>
       </div>

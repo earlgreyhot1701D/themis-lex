@@ -1,16 +1,21 @@
 'use client';
 
 /**
- * LoadingState.tsx — Loading indicator during API call.
- * One responsibility: show active progress feedback.
+ * LoadingState.tsx — Loading indicator during the assessment API call.
+ * One responsibility: show honest, active progress feedback.
  * See Architecture v1.1 Section 6 — owns elapsed time state.
- * Design matches the locked HTML reference with enhanced UX for long calls.
+ *
+ * Honesty note:
+ * The assessment is a single Bedrock call with no intermediate milestones
+ * the frontend can observe. This component therefore makes NO claim that any
+ * step has "completed." It shows an indeterminate progress bar, an elapsed
+ * timer, and rotating present-tense status messages that describe the kind of
+ * work in progress without asserting a verified backend stage.
  *
  * Features:
- * - Rotating progress messages every 7-8 seconds
- * - Elapsed-time counter (charcoal on cream, smaller than message)
- * - Progress dots tied loosely to elapsed time (0-10s, 10-20s, 20-30s, 30s+)
- * - No fake percentage bar. Animations must actually animate.
+ * - Rotating status messages (~8s each), present-tense, never "done"
+ * - Elapsed-time counter (visual only; not announced per-second)
+ * - Indeterminate shimmer bar (no fake percentage, no completion dots)
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -31,17 +36,6 @@ function formatElapsed(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-/**
- * Returns which dot index (0-3) should be active based on elapsed seconds.
- * Dot 0: 0-10s, Dot 1: 10-20s, Dot 2: 20-30s, Dot 3: 30s+
- */
-function getActiveDot(seconds: number): number {
-  if (seconds < 10) return 0;
-  if (seconds < 20) return 1;
-  if (seconds < 30) return 2;
-  return 3;
-}
-
 export default function LoadingState() {
   const [messageIndex, setMessageIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0);
@@ -49,15 +43,14 @@ export default function LoadingState() {
   const messageRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    // Elapsed counter — ticks every second
+    // Elapsed counter — ticks every second (visual only)
     intervalRef.current = setInterval(() => {
       setElapsed((prev) => prev + 1);
     }, 1000);
 
-    // Message rotation — every 8 seconds
+    // Message rotation — every 8 seconds; holds on the final message
     messageRef.current = setInterval(() => {
       setMessageIndex((prev) => {
-        // Cycle last message if we've gone through all
         if (prev >= MESSAGES.length - 1) return MESSAGES.length - 1;
         return prev + 1;
       });
@@ -69,43 +62,34 @@ export default function LoadingState() {
     };
   }, []);
 
-  const activeDot = getActiveDot(elapsed);
-
-  const steps = [
-    { label: 'Role context', index: 0 },
-    { label: 'Workflow parsing', index: 1 },
-    { label: 'Data sensitivity match', index: 2 },
-    { label: 'Guidance draft', index: 3 },
-  ];
-
   return (
-    <div className="loading">
-      <p className="loading__title">{MESSAGES[messageIndex]}</p>
+    <div className="loading" aria-busy="true">
+      {/*
+        Single polite live region. The rotating message is the status source,
+        so a screen reader hears each new honest status (~every 8s) and nothing
+        more. The elapsed timer below is deliberately excluded from the live
+        region to avoid per-second announcement spam.
+      */}
+      <p className="loading__title" role="status" aria-live="polite">
+        {MESSAGES[messageIndex]}
+      </p>
       <p className="loading__sub">
         Reviewing your workflow against court-approved readiness rules.
       </p>
       <div
         className="loading__bar"
         role="progressbar"
-        aria-label="Assessment running"
-        aria-valuetext="Running"
+        aria-label="Assessment in progress"
+        aria-valuetext="Assessment in progress"
       />
-      <p className="loading__elapsed" aria-live="off">
+      {/*
+        Elapsed time is visual reassurance only. aria-hidden so assistive tech
+        is not handed a number that would otherwise read as stale (the live
+        region is not watching it).
+      */}
+      <p className="loading__elapsed" aria-hidden="true">
         {formatElapsed(elapsed)}
       </p>
-      <div className="loading__steps">
-        {steps.map((step) => {
-          const isDone = step.index < activeDot;
-          const isActive = step.index === activeDot;
-          const className = `loading__step${isDone ? ' is-done' : ''}${isActive ? ' is-active' : ''}`;
-          return (
-            <div key={step.label} className={className}>
-              <span className="loading__dot" />
-              {step.label}
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
