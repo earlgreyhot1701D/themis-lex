@@ -1,8 +1,10 @@
 /**
  * AWS Bedrock client wrapper for Themis Lex.
- * One responsibility: send a prompt to Claude via Bedrock and return parsed JSON.
- * Model is configurable via BEDROCK_MODEL_ID env var; falls back to Claude
- * Haiku 4.5 (hardcoded on line 70). See Prompt Spec v1.2 Section 4.
+ * One responsibility: send a prompt to Claude Haiku 4.5 via Bedrock and
+ * return parsed JSON.
+ * Model is set exclusively via the BEDROCK_MODEL_ID env var. There is no
+ * hardcoded fallback: if the var is missing, callBedrock throws
+ * BedrockConfigError. See Prompt Spec v1.2 Section 4.
  *
  * Uses InvokeModelWithResponseStreamCommand to collect the response via streaming.
  * This keeps the Lambda process alive during generation (Amplify SSR has a 30s
@@ -71,7 +73,7 @@ function createClient(): BedrockRuntimeClient {
 }
 
 /**
- * Sends a single prompt to Claude via Bedrock at temperature 0.2.
+ * Sends a single prompt to Claude Haiku 4.5 via Bedrock at temperature 0.2.
  * Uses response streaming to collect chunks (keeps Lambda alive during generation).
  * Returns parsed JSON response or a structured error.
  *

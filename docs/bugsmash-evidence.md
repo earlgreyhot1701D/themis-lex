@@ -49,13 +49,17 @@ function createClient(): BedrockRuntimeClient {
 
 | File | Line | Value |
 |------|------|-------|
-| `lib/bedrock.ts` | 70 | `'us.anthropic.claude-haiku-4-5-20251001-v1:0'` (hardcoded fallback) |
+| `lib/bedrock.ts` | 92 | `process.env.BEDROCK_MODEL_ID` (no fallback — throws `BedrockConfigError` if unset) |
 | `next.config.js` | 23 | `process.env.BEDROCK_MODEL_ID` (forwarded to runtime) |
 
-**Yes, a hardcoded fallback model ID still exists** in `lib/bedrock.ts` line 70:
+**No, there is no longer a hardcoded fallback model ID.** `lib/bedrock.ts` reads the env var and throws if it is missing:
 ```typescript
-const modelId = process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-haiku-4-5-20251001-v1:0';
+const modelId = process.env.BEDROCK_MODEL_ID;
+if (!modelId) {
+  throw new BedrockConfigError('BEDROCK_MODEL_ID');
+}
 ```
+(An earlier revision did have a `|| 'us.anthropic.claude-haiku-4-5-20251001-v1:0'` fallback; it was removed in favor of fail-fast config validation. This report entry has been corrected to match current code.)
 
 **max_tokens progression:**
 
@@ -100,7 +104,7 @@ module.exports = nextConfig;
 | File | Variable | Fallback |
 |------|----------|----------|
 | `lib/bedrock.ts:53` | `AWS_REGION` | `'us-east-1'` |
-| `lib/bedrock.ts:70` | `BEDROCK_MODEL_ID` | `'us.anthropic.claude-haiku-4-5-20251001-v1:0'` |
+| `lib/bedrock.ts:92` | `BEDROCK_MODEL_ID` | none — throws `BedrockConfigError` if unset |
 | `app/page.tsx:22` | `NEXT_PUBLIC_APP_VERSION` | `'0.4'` |
 | `next.config.js:23` | `BEDROCK_MODEL_ID` | (forwarded, no fallback at this layer) |
 
@@ -218,12 +222,19 @@ Nowhere else in the codebase.
 
 ## Observations, Not Acted On
 
-1. **The file header comment in `lib/bedrock.ts` says "max_tokens reduced to 3000"** but the actual constant is `4000`. Stale comment.
+> Update 2026-10-11: Items 1, 2, and 4 below described stale comments in
+> `lib/bedrock.ts`. Those comments have since been corrected in the source
+> (the file header now documents the full 6000→3000→2000→4000 max_tokens
+> history and references Haiku 4.5; the JSDoc states max_tokens 4000). They
+> are kept here, struck through, for the audit trail. Items 3 and 5 (DEPLOY.md
+> and README.md) remain open.
 
-2. **The JSDoc comment above `callBedrock()` says "max_tokens set to 3000"** but the constant is `4000`. Same stale comment.
+1. ~~**The file header comment in `lib/bedrock.ts` says "max_tokens reduced to 3000"** but the actual constant is `4000`. Stale comment.~~ RESOLVED — header now documents the full max_tokens history ending at 4000.
+
+2. ~~**The JSDoc comment above `callBedrock()` says "max_tokens set to 3000"** but the constant is `4000`. Same stale comment.~~ RESOLVED — JSDoc now states max_tokens 4000.
 
 3. **`DEPLOY.md` line 27 only documents `amplify.amazonaws.com`** in the trust policy. The actual working trust policy requires both `amplify.amazonaws.com` and `lambda.amazonaws.com`. This doc is out of date.
 
-4. **`lib/bedrock.ts` file header says "send a prompt to Claude Sonnet"** but the actual model is Haiku 4.5. Stale reference to Sonnet.
+4. ~~**`lib/bedrock.ts` file header says "send a prompt to Claude Sonnet"** but the actual model is Haiku 4.5. Stale reference to Sonnet.~~ RESOLVED — header and JSDoc now reference Claude Haiku 4.5.
 
 5. **The `README.md` at line 304 refers to `max_tokens=6000`** which was the original value. Current is `4000`.
