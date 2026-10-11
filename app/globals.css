@@ -437,6 +437,58 @@ textarea:focus-visible {
 .context-chip strong { font-weight: 600; color: var(--ink); }
 .context-chip--sens strong { color: var(--terra-deep); }
 
+/* Top download trigger — convenience action above results.
+   Restrained secondary emphasis: more noticeable than the ghost "Start over"
+   button, but deliberately not the terracotta primary reserved for
+   "Run Assessment". Uses the sage family so it reads as a distinct, calmer
+   action. */
+.results-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: var(--s4);
+}
+.btn-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--sage-soft);
+  color: var(--sage-deep);
+  border: 1.5px solid var(--sage);
+  border-radius: 4px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 12px 22px;
+  cursor: pointer;
+  min-height: 46px;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.btn-download .pdf-icon { color: var(--sage-deep); transition: color .15s ease; }
+.btn-download:hover {
+  background: var(--sage-deep);
+  border-color: var(--sage-deep);
+  color: #fff;
+}
+.btn-download:hover .pdf-icon { color: #fff; }
+.btn-download:disabled {
+  background: var(--rule-soft);
+  border-color: var(--rule);
+  color: var(--warm-gray-2);
+  cursor: progress;
+}
+.btn-download:disabled .pdf-icon { color: var(--warm-gray-2); }
+.results-actions__error {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--terra-deep);
+  text-align: right;
+  max-width: 520px;
+}
+
 /* Two-column layout */
 .two-col {
   display: grid;
@@ -532,7 +584,7 @@ textarea:focus-visible {
   display: grid;
   grid-template-columns: 124px 1fr;
   gap: 16px;
-  padding: 10px 0;
+  padding: 12px 0;
   border-top: 1px solid var(--rule-soft);
 }
 .wf-row:first-of-type { border-top: 0; }
@@ -550,6 +602,33 @@ textarea:focus-visible {
   font-size: 14.5px;
   line-height: 1.55;
   color: var(--ink);
+}
+
+/* Actionable row emphasis — the row a reader should act on
+   (Guardrails on help cards, Instead on notouch cards).
+   Non-color structural cue: a thin left accent (a shape change, not just a
+   hue) plus a darker semantic label token. Importance is therefore signalled
+   by border + label weight/color together, never color alone.
+   Alignment: the 2px border + 14px left padding are cancelled by an equal
+   negative left margin, so the label/value grid starts at the exact same
+   x-position as every other row — no horizontal jog. */
+.wf-row--action {
+  border-left-width: 2px;
+  border-left-style: solid;
+  padding-left: 14px;
+  margin-left: -16px;
+}
+.wf-card--help .wf-row--action {
+  border-left-color: var(--sage);
+}
+.wf-card--help .wf-row--action .wf-row__label {
+  color: var(--sage-deep);
+}
+.wf-card--noTouch .wf-row--action {
+  border-left-color: var(--terra);
+}
+.wf-card--noTouch .wf-row--action .wf-row__label {
+  color: var(--terra-deep);
 }
 
 /* ============================================================
@@ -609,21 +688,6 @@ textarea:focus-visible {
   0%   { transform: translateX(-60%); }
   100% { transform: translateX(160%); }
 }
-.loading__steps {
-  display: flex;
-  justify-content: center;
-  gap: var(--s3);
-  margin-top: var(--s3);
-  font-family: var(--sans);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-.loading__step { display: flex; align-items: center; gap: 8px; }
-.loading__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rule); }
-.loading__step.is-active .loading__dot { background: var(--terra); }
-.loading__step.is-done   .loading__dot { background: var(--sage); }
 @media (prefers-reduced-motion: reduce) {
   .loading__bar::before { animation: none; background: var(--terra); transform: none; opacity: 0.8; }
   .spinner { animation: none !important; }
@@ -872,13 +936,19 @@ textarea:disabled {
 
   .wf-row {
     grid-template-columns: 1fr;
-    gap: 4px;
+    gap: 6px;
+    padding: 14px 0;
   }
   .wf-row__label { padding-top: 0; }
+  /* Keep the actionable accent + alignment compensation on mobile too. The
+     left accent still reads clearly when the row is stacked single-column. */
+  .wf-row--action { padding-left: 12px; margin-left: -14px; }
 
   .col-wrap { padding: var(--s3); }
 
   .btn-outline { padding: 12px 20px; font-size: 14px; }
 
-  .loading__steps { flex-wrap: wrap; gap: var(--s2); }
+  .results-actions { align-items: stretch; }
+  .btn-download { justify-content: center; }
+  .results-actions__error { text-align: left; max-width: none; }
 }
