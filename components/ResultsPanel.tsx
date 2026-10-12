@@ -144,10 +144,18 @@ export default function ResultsPanel({
         )}
       </div>
 
-      <div className="two-col">
-        {/* Left column: Where AI Can Help */}
-        <div className="col-wrap col-wrap--help">
-          <div className="col-head">
+      {/* Boundary grid: two equal-width domains separated by a central rule
+          (desktop) / thin labeled divider (mobile). The findings render once;
+          the boundary element is a single CSS-styled node reused at both
+          breakpoints. Each domain is a labelled landmark so the distinction is
+          carried by real headings, not by the decorative rule. */}
+      <div className="boundary-grid">
+        {/* Domain A: Where AI Can Help */}
+        <section
+          className="boundary-domain boundary-domain--help"
+          aria-labelledby="domain-a-head"
+        >
+          <div className="boundary-domain__head boundary-domain__head--help">
             <span className="col-icon col-icon--sage" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                 <path
@@ -158,20 +166,36 @@ export default function ResultsPanel({
                 />
               </svg>
             </span>
-            <h3>Where AI Can Help You</h3>
+            <h3 id="domain-a-head">
+              <span className="boundary-domain__index" aria-hidden="true">A</span>
+              Where AI Can Help You
+            </h3>
             <span className="col-head__count">
               {results.can_help.length} workflow
               {results.can_help.length !== 1 ? 's' : ''}
             </span>
           </div>
           {results.can_help.map((item, i) => (
-            <WorkflowCard key={i} variant="help" item={item} />
+            <WorkflowCard
+              key={i}
+              variant="help"
+              item={item}
+              indexLabel={`A${i + 1}`}
+            />
           ))}
+        </section>
+
+        {/* The boundary — decorative; meaning lives in the domain headings. */}
+        <div className="boundary-rule" aria-hidden="true">
+          <span className="boundary-rule__label">The Boundary</span>
         </div>
 
-        {/* Right column: Where AI Must Not Touch */}
-        <div className="col-wrap col-wrap--notouch">
-          <div className="col-head">
+        {/* Domain B: Where AI Must Not Touch */}
+        <section
+          className="boundary-domain boundary-domain--notouch"
+          aria-labelledby="domain-b-head"
+        >
+          <div className="boundary-domain__head boundary-domain__head--notouch">
             <span className="col-icon col-icon--terra" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                 <path
@@ -189,16 +213,24 @@ export default function ResultsPanel({
                 />
               </svg>
             </span>
-            <h3>Where AI Must Not Touch</h3>
+            <h3 id="domain-b-head">
+              <span className="boundary-domain__index" aria-hidden="true">B</span>
+              Where AI Must Not Touch
+            </h3>
             <span className="col-head__count">
               {results.must_not_touch.length} workflow
               {results.must_not_touch.length !== 1 ? 's' : ''}
             </span>
           </div>
           {results.must_not_touch.map((item, i) => (
-            <WorkflowCard key={i} variant="notouch" item={item} />
+            <WorkflowCard
+              key={i}
+              variant="notouch"
+              item={item}
+              indexLabel={`B${i + 1}`}
+            />
           ))}
-        </div>
+        </section>
       </div>
 
       {/* Action bar — PDF download */}

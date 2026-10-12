@@ -72,6 +72,85 @@ body {
   background: var(--bg);
   border-bottom: 1px solid var(--rule);
 }
+/* Packet-style header: engraved double rule (thick + hairline) at the top,
+   echoing the brand banner's border. Corner tiles are the small terracotta
+   squares from the identity, drawn in CSS — decorative, aria-hidden. */
+.site-header--packet {
+  position: relative;
+  border-top: 2px solid var(--ink);
+  box-shadow: inset 0 4px 0 -3px var(--ink); /* hairline just below the thick rule */
+}
+.packet-tile {
+  position: absolute;
+  top: 10px;
+  width: 9px;
+  height: 9px;
+  background: var(--terra);
+  pointer-events: none;
+}
+.packet-tile--left { left: var(--s10); }
+.packet-tile--right { right: var(--s10); }
+
+/* Intake boundary legend — introduces the two domains as a descriptive
+   preview. The center rule carries a subtle circuit-tick detail. The rule is
+   decorative (aria-hidden in markup); meaning is carried by the two labels. */
+.boundary-legend {
+  margin: 0 0 var(--s5) 0;
+}
+.boundary-legend__intro {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink-3);
+  margin: 0 0 10px 0;
+}
+.boundary-legend__pair {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: stretch;
+  gap: 0;
+  max-width: 640px;
+}
+.boundary-legend__side {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+}
+.boundary-legend__side--help {
+  background: var(--col-help-bg);
+  border: 1px solid var(--col-help-border);
+  border-left: 5px solid var(--sage-deep);
+  color: var(--sage-deep);
+}
+.boundary-legend__side--notouch {
+  background: var(--col-notouch-bg);
+  border: 1px solid var(--col-notouch-border);
+  border-right: 5px solid var(--terra-deep);
+  color: var(--terra-deep);
+  justify-content: flex-end;
+  text-align: right;
+}
+/* The boundary rule: a thin ink divider with CSS-drawn tick nodes (no asset). */
+.boundary-legend__rule {
+  width: 2px;
+  background: var(--ink);
+  position: relative;
+}
+.boundary-legend__rule::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  background: var(--terra);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
 .site-header__inner {
   display: flex;
   align-items: center;
@@ -490,29 +569,117 @@ textarea:focus-visible {
 }
 
 /* Two-column layout */
-.two-col {
+/* ============================================================
+   BOUNDARY GRID — two equal-width domains + central boundary
+   The boundary is the product's organizing idea: AI May Assist on one side,
+   Human Responsibility on the other. Equal 1fr columns = equal prominence,
+   regardless of sensitivity. The center track holds the boundary rule and
+   stretches to the full row height so it spans whichever domain is taller.
+   ============================================================ */
+.boundary-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--s5);
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--s4);
+  align-items: stretch;
 }
 
-/* Column containers */
-.col-wrap {
+/* Domain containers (equal width; content-driven height — no forced match) */
+.boundary-domain {
   border-radius: 10px;
   padding: var(--s4);
 }
-.col-wrap--help {
+.boundary-domain--help {
   background: var(--col-help-bg);
   border: 1px solid var(--col-help-border);
   border-top: 3px solid var(--col-help-top);
 }
-.col-wrap--notouch {
+.boundary-domain--notouch {
   background: var(--col-notouch-bg);
   border: 1px solid var(--col-notouch-border);
   border-top: 3px solid var(--col-notouch-top);
 }
 
-/* Column headers */
+/* The boundary rule: a thin ink vertical rule with a vertical label and a
+   CSS-drawn circuit-tick node. Decorative (aria-hidden); meaning is in the
+   domain headings. Stretches to full row height via align-items:stretch. */
+.boundary-rule {
+  position: relative;
+  width: 2px;
+  background: var(--ink);
+  justify-self: center;
+}
+.boundary-rule::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  background: var(--terra);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.boundary-rule__label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  transform-origin: center;
+  white-space: nowrap;
+  background: var(--bg);
+  padding: 6px 8px;
+  font-family: var(--sans);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Domain headers (reuse the former column-head treatment) */
+.boundary-domain__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: var(--s3);
+  margin-bottom: var(--s3);
+  border-bottom: 1px solid var(--rule);
+}
+.boundary-domain__head h3 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* A / B domain index — a document reference marker, not a ranking. */
+.boundary-domain__index {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.boundary-domain__head--help .boundary-domain__index {
+  background: var(--sage-deep);
+  color: #fff;
+}
+.boundary-domain__head--notouch .boundary-domain__index {
+  background: var(--terra-deep);
+  color: #fff;
+}
+
+/* legacy column header class retained for the icon badge */
 .col-head {
   display: flex;
   align-items: center;
@@ -570,6 +737,22 @@ textarea:focus-visible {
   margin: 2px 0 14px 0;
   letter-spacing: -0.005em;
 }
+/* Per-finding document reference (A1, B1…). Ordinal wayfinding only — not a
+   ranking or severity marker. Decorative; aria-hidden in markup. */
+.wf-card__ref {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin-right: 10px;
+  vertical-align: 2px;
+  white-space: nowrap;
+}
+.wf-card__ref--help { background: var(--sage-soft); color: var(--sage-deep); }
+.wf-card__ref--notouch { background: var(--terra-soft); color: var(--terra-deep); }
 .wf-card__description {
   font-family: var(--serif);
   font-style: italic;
@@ -890,9 +1073,21 @@ textarea:disabled {
     gap: var(--s3);
   }
 
-  .two-col {
+  /* Boundary grid collapses to a single column. The center rule becomes a
+     thin, labeled horizontal divider between the stacked domains. The A/B
+     domain headings remain the accessible carriers of the distinction. */
+  .boundary-grid {
     grid-template-columns: 1fr;
     gap: var(--s4);
+  }
+  .boundary-rule {
+    width: auto;
+    height: 2px;
+    justify-self: stretch;
+    margin: var(--s2) 0;
+  }
+  .boundary-rule__label {
+    transform: translate(-50%, -50%);
   }
 
   .pill-group {
@@ -907,6 +1102,26 @@ textarea:disabled {
   .footer-right { text-align: center; }
 
   .col-head h3 { font-size: 18px; }
+
+  /* Corner tiles follow the narrower content gutter. */
+  .packet-tile--left { left: var(--s4); }
+  .packet-tile--right { right: var(--s4); }
+
+  /* Boundary legend: stack the two sides with a thin horizontal divider.
+     The two labels remain the accessible carriers of the distinction. */
+  .boundary-legend__pair {
+    grid-template-columns: 1fr;
+    max-width: none;
+  }
+  .boundary-legend__side--notouch { justify-content: flex-start; text-align: left; }
+  .boundary-legend__side--help { border-left: 5px solid var(--sage-deep); }
+  .boundary-legend__side--notouch { border-right: 1px solid var(--col-notouch-border); border-left: 5px solid var(--terra-deep); }
+  .boundary-legend__rule {
+    width: auto;
+    height: 2px;
+    margin: 0 24px;
+  }
+  .boundary-legend__rule::before { width: 7px; height: 7px; }
 }
 
 /* ============================================================
@@ -921,6 +1136,8 @@ textarea:disabled {
 
   .wordmark { font-size: 18px; }
   .site-header__desc { font-size: 11px; }
+  .packet-tile--left { left: var(--s2); }
+  .packet-tile--right { right: var(--s2); }
 
   .form-section__title { font-size: 24px; }
 

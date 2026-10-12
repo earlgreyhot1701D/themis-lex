@@ -119,6 +119,23 @@ export default function AssessmentForm({
         </p>
       </div>
 
+      {/* Boundary legend — descriptive preview of the two domains the
+          assessment sorts tasks into. Not a verdict; purely explanatory. */}
+      <div className="boundary-legend" role="note" aria-label="What the assessment produces">
+        <p className="boundary-legend__intro">
+          Your assessment sorts the tasks you describe into two kinds:
+        </p>
+        <div className="boundary-legend__pair">
+          <span className="boundary-legend__side boundary-legend__side--help">
+            AI May Assist
+          </span>
+          <span className="boundary-legend__rule" aria-hidden="true" />
+          <span className="boundary-legend__side boundary-legend__side--notouch">
+            Human Responsibility
+          </span>
+        </div>
+      </div>
+
       <form className="card" onSubmit={handleSubmit} noValidate>
         {/* Role selector */}
         <div className="field">

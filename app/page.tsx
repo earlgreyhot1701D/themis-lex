@@ -133,8 +133,10 @@ export default function Home() {
 
   return (
     <div className="page">
-      {/* Header */}
-      <header className="site-header">
+      {/* Header — packet-style double rule with engraved corner tiles */}
+      <header className="site-header site-header--packet">
+        <span className="packet-tile packet-tile--left" aria-hidden="true" />
+        <span className="packet-tile packet-tile--right" aria-hidden="true" />
         <div className="wrap site-header__inner">
           <span className="wordmark" aria-label="Themis Lex">
             THEMIS&nbsp;LEX
