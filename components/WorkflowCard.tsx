@@ -18,21 +18,32 @@ import type { CanHelpItem, MustNotTouchItem } from '@/lib/validate';
 interface HelpCardProps {
   variant: 'help';
   item: CanHelpItem;
+  /** Document reference label (e.g. "A1"). Ordinal only — not a ranking. */
+  indexLabel?: string;
 }
 
 interface NoTouchCardProps {
   variant: 'notouch';
   item: MustNotTouchItem;
+  /** Document reference label (e.g. "B1"). Ordinal only — not a ranking. */
+  indexLabel?: string;
 }
 
 type WorkflowCardProps = HelpCardProps | NoTouchCardProps;
 
 export default function WorkflowCard(props: WorkflowCardProps) {
   if (props.variant === 'help') {
-    const { item } = props;
+    const { item, indexLabel } = props;
     return (
       <article className="wf-card wf-card--help">
-        <h4 className="wf-card__title">{item.workflow_name}</h4>
+        <h4 className="wf-card__title">
+          {indexLabel && (
+            <span className="wf-card__ref wf-card__ref--help" aria-hidden="true">
+              {indexLabel}
+            </span>
+          )}
+          {item.workflow_name}
+        </h4>
         <p className="wf-card__description">{item.description}</p>
         <div className="wf-row">
           <div className="wf-row__label">Why it&#39;s safe</div>
@@ -48,10 +59,17 @@ export default function WorkflowCard(props: WorkflowCardProps) {
     );
   }
 
-  const { item } = props;
+  const { item, indexLabel } = props;
   return (
     <article className="wf-card wf-card--noTouch">
-      <h4 className="wf-card__title">{item.workflow_name}</h4>
+      <h4 className="wf-card__title">
+        {indexLabel && (
+          <span className="wf-card__ref wf-card__ref--notouch" aria-hidden="true">
+            {indexLabel}
+          </span>
+        )}
+        {item.workflow_name}
+      </h4>
       <p className="wf-card__description">{item.description}</p>
       <div className="wf-row">
         <div className="wf-row__label">Rule</div>
