@@ -458,6 +458,18 @@ textarea:focus-visible {
 .disabled-helper { display: none; margin-top: 12px; font-size: 13px; color: var(--ink-3); }
 .btn-primary[aria-disabled="true"] + .disabled-helper { display: block; }
 
+/* Clear — secondary reset action below the primary submit. */
+.form-clear {
+  display: block;
+  margin: 12px auto 0 auto;
+}
+.form-clear:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: var(--rule-soft);
+  color: var(--warm-gray-2);
+}
+
 /* ============================================================
    RESULTS NOTICE (not-saved info bar)
    ============================================================ */

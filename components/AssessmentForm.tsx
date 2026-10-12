@@ -76,6 +76,15 @@ export default function AssessmentForm({
     [canSubmit, role, workflow, sensitivity, onSubmit]
   );
 
+  // Reset all three inputs to their initial defaults so the user can start a
+  // fresh selection without reloading. Matches the initial useState values.
+  const hasInput = workflow.length > 0 || role !== 'ja1_2' || sensitivity !== 'high';
+  const handleClear = useCallback(() => {
+    setRole('ja1_2');
+    setWorkflow('');
+    setSensitivity('high');
+  }, []);
+
   const handlePillKeyDown = useCallback(
     (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
       let nextIndex = index;
@@ -296,6 +305,16 @@ export default function AssessmentForm({
             </span>
           )}
           {isLoading && <span className="spinner" aria-hidden="true" />}
+        </button>
+        {/* Clear — reset all selections to start over without reloading. */}
+        <button
+          type="button"
+          className="btn-ghost form-clear"
+          onClick={handleClear}
+          disabled={isLoading || !hasInput}
+          aria-label="Clear your selections and start over"
+        >
+          Clear
         </button>
         {!canSubmit && !isLoading && (
           <p className="disabled-helper" style={{ display: 'block' }}>
